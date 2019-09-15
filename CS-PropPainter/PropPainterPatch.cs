@@ -15,8 +15,10 @@ namespace PropPainter
         public static IEnumerable<CodeInstruction> Transpiler(MethodBase original, IEnumerable<CodeInstruction> instructions)
         {
             List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
-            var GetColorOriginal = typeof(PropInfo).GetMethod("GetColor", new Type[] {typeof(ColossalFramework.Math.Randomizer)});
+            var GetColorOriginal = typeof(PropInfo).GetMethod("GetColor", new Type[] {typeof(ColossalFramework.Math.Randomizer).MakeByRefType()});
+            Debug.Log(GetColorOriginal);
             var GetColorFix = typeof(PropPainterGetColorFix).GetMethod("GetColor");
+            var foundInstruction = false;
 
             for (int i = 0; i < codes.Count; i++ ){
                 if (codes[i].opcode == OpCodes.Callvirt)
@@ -24,14 +26,16 @@ namespace PropPainter
                     if (codes[i].operand == GetColorOriginal)
                     {
                         Debug.Log("Found the correct CodeInstruction");
-                        int FIRST = i - 2;
+                        foundInstruction = true;
 
                         /** Original IL [Harmony]:
                          * L_00bc: ldloc.0
                          * L_00bd: ldloca.s 3 (ColossalFramework.Math.Randomizer)
-                         * L_00bf: callvirt Color GetColor(Randomizer ByRef)
+                         * L_00bf: callvirt Color GetColor(Randomizer ByRef)  <-- We target this line, so the first line is 2 before. -->
                          * L_00c4: stloc.s 5 (UnityEngine.Color)
                          */
+
+                        int FIRST = i - 2;
 
                         /** Modified IL [dnSpy]:
                          * IL_00A4: ldarg.0
@@ -42,42 +46,31 @@ namespace PropPainter
                          * IL_00AE: stloc.s color [5]
                         */
 
-                        // IL_00A9: call instance valuetype [etc...] *
-                        codes[i] = new CodeInstruction(codes[i])
-                        {
-                            opcode = OpCodes.Call,
-                            operand = GetColorFix
-                        };
-
                         // IL_00A4: ldarg.0 [FIRST] *
-                        // IL_00A5: ldloc.0 (moved to second position)
-                        // [...]
-                        // IL_00A9: call instance valuetype [etc...]
-                        codes.Insert(FIRST, new CodeInstruction(codes[FIRST])
-                        {
-                            opcode = OpCodes.Ldarg_0
-                        });
+                        // IL_00A5: ldloc.0 (moved to second position*)
+                        codes.Insert(FIRST, new CodeInstruction(OpCodes.Ldarg_0));
 
                         // IL_00A4: ldarg.0 [FIRST]
                         // IL_00A5: ldloc.0
                         // IL_00A6: ldarg.2 *
-                        // [...]
-                        // IL_00A9: call instance valuetype [etc...]
-                        codes.Insert(FIRST + 2, new CodeInstruction(codes[FIRST])
-                        {
-                            opcode = OpCodes.Ldarg_2
-                        });
+                        codes.Insert(FIRST + 2, new CodeInstruction(OpCodes.Ldarg_2));
 
                         // IL_00A4: ldarg.0 [FIRST]
                         // IL_00A5: ldloc.0
                         // IL_00A6: ldarg.2
                         // IL_00A7: ldloca.s  randomizer [3] *
-                        // IL_00A9: call instance valuetype [etc...]
-                        codes.Insert(FIRST + 3, new CodeInstruction(codes[FIRST])
+                        codes.Insert(FIRST + 3, new CodeInstruction(OpCodes.Ldloca_S, 3));
+
+                        // IL_00A4: ldarg.0 [FIRST]
+                        // IL_00A5: ldloc.0
+                        // IL_00A6: ldarg.2
+                        // IL_00A7: ldloca.s  randomizer [3]
+                        // IL_00A9: call instance valuetype [etc...] *
+                        codes[FIRST + 4] = new CodeInstruction(codes[FIRST + 4])
                         {
-                            opcode = OpCodes.Ldloca_S,
-                            operand = 3
-                        });
+                            opcode = OpCodes.Call,
+                            operand = GetColorFix
+                        };
                     }
                 }
             }
@@ -88,7 +81,7 @@ namespace PropPainter
                 int index = codes.IndexOf(toChange);
                 Debug.Log(codes[index].operand);
             }*/
-            
+            if (!foundInstruction) Debug.LogError("Did not find CodeInstruction, GetColor not patched.");
             return codes.AsEnumerable();
         }
     }
