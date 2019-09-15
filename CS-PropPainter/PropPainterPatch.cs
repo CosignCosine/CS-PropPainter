@@ -20,7 +20,10 @@ namespace PropPainter
             var GetColorFix = typeof(PropPainterGetColorFix).GetMethod("GetColor");
             var foundInstruction = false;
 
-            for (int i = 0; i < codes.Count; i++ ){
+            for (int i = 0; i < codes.Count; i++){
+                // Weird case, not sure what causes this.
+                if (foundInstruction) break;
+
                 if (codes[i].opcode == OpCodes.Callvirt)
                 {
                     if (codes[i].operand == GetColorOriginal)
@@ -31,7 +34,7 @@ namespace PropPainter
                         /** Original IL [Harmony]:
                          * L_00bc: ldloc.0
                          * L_00bd: ldloca.s 3 (ColossalFramework.Math.Randomizer)
-                         * L_00bf: callvirt Color GetColor(Randomizer ByRef)  <-- We target this line, so the first line is 2 before. -->
+                         * L_00bf: callvirt Color GetColor(Randomizer ByRef)   [We target this line, so the first line is 2 before.]
                          * L_00c4: stloc.s 5 (UnityEngine.Color)
                          */
 
@@ -71,6 +74,7 @@ namespace PropPainter
                             opcode = OpCodes.Call,
                             operand = GetColorFix
                         };
+                        break;
                     }
                 }
             }
