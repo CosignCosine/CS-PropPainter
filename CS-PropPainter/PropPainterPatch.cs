@@ -20,15 +20,23 @@ namespace PropPainter
             var GetColorFix = typeof(PropPainterGetColorFix).GetMethod("GetColor");
             var foundInstruction = false;
 
+            var fixedInstructions = new[]
+            {
+                new CodeInstruction(OpCodes.Ldarg_0),
+                new CodeInstruction(OpCodes.Ldloc_0),
+                new CodeInstruction(OpCodes.Ldarg_2),
+                new CodeInstruction(OpCodes.Ldloca_S, 3),
+                new CodeInstruction(OpCodes.Callvirt, GetColorFix),
+                new CodeInstruction(OpCodes.Stloc_S, 5)
+            };
+
             for (int i = 0; i < codes.Count; i++){
-                // Weird case, not sure what causes this.
-                if (foundInstruction) break;
 
                 if (codes[i].opcode == OpCodes.Callvirt)
                 {
                     if (codes[i].operand == GetColorOriginal)
                     {
-                        Debug.Log("Found the correct CodeInstruction");
+                        Debug.Log("Found GetColor instruction.");
                         foundInstruction = true;
 
                         /** Original IL [Harmony]:
@@ -40,6 +48,10 @@ namespace PropPainter
 
                         int FIRST = i - 2;
 
+                        codes.RemoveRange(FIRST, 4);
+
+                        Debug.Log("Deleted instructions.");
+
                         /** Modified IL [dnSpy]:
                          * IL_00A4: ldarg.0
                          * IL_00A5: ldloc.0
@@ -49,42 +61,14 @@ namespace PropPainter
                          * IL_00AE: stloc.s color [5]
                         */
 
-                        // IL_00A4: ldarg.0 [FIRST] *
-                        // IL_00A5: ldloc.0 (moved to second position*)
-                        codes.Insert(FIRST, new CodeInstruction(OpCodes.Ldarg_0));
+                        codes.InsertRange(FIRST, fixedInstructions);
 
-                        // IL_00A4: ldarg.0 [FIRST]
-                        // IL_00A5: ldloc.0
-                        // IL_00A6: ldarg.2 *
-                        codes.Insert(FIRST + 2, new CodeInstruction(OpCodes.Ldarg_2));
-
-                        // IL_00A4: ldarg.0 [FIRST]
-                        // IL_00A5: ldloc.0
-                        // IL_00A6: ldarg.2
-                        // IL_00A7: ldloca.s  randomizer [3] *
-                        codes.Insert(FIRST + 3, new CodeInstruction(OpCodes.Ldloca_S, 3));
-
-                        // IL_00A4: ldarg.0 [FIRST]
-                        // IL_00A5: ldloc.0
-                        // IL_00A6: ldarg.2
-                        // IL_00A7: ldloca.s  randomizer [3]
-                        // IL_00A9: call instance valuetype [etc...] *
-                        codes[FIRST + 4] = new CodeInstruction(codes[FIRST + 4])
-                        {
-                            opcode = OpCodes.Call,
-                            operand = GetColorFix
-                        };
+                        Debug.Log("Added new instructions.");
                         break;
                     }
                 }
             }
-            /*
-            CodeInstruction toChange = codes.FirstOrDefault(instruction => (instruction.operand as String).Contains("GetColor"));
 
-            if(toChange != null){
-                int index = codes.IndexOf(toChange);
-                Debug.Log(codes[index].operand);
-            }*/
             if (!foundInstruction) Debug.LogError("Did not find CodeInstruction, GetColor not patched.");
             return codes.AsEnumerable();
         }
