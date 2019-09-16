@@ -26,4 +26,22 @@ namespace PropPainter
             harmony = null;
         }
     }
+
+    public static class Db {
+        public static bool ON = true;
+
+        public static void l(object m){
+            if(ON) Debug.Log(m);
+        }
+
+        public static void w(object m)
+        {
+            if (ON) Debug.LogWarning(m);
+        }
+
+        public static void e(object m)
+        {
+            if (ON) Debug.LogError(m);
+        }
+    }
 }

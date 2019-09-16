@@ -15,9 +15,10 @@ namespace PropPainter
         public static IEnumerable<CodeInstruction> Transpiler(MethodBase original, IEnumerable<CodeInstruction> instructions)
         {
             List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
+
             var GetColorOriginal = typeof(PropInfo).GetMethod("GetColor", new Type[] {typeof(ColossalFramework.Math.Randomizer).MakeByRefType()});
-            Debug.Log(GetColorOriginal);
             var GetColorFix = typeof(PropPainterGetColorFix).GetMethod("GetColor");
+
             var foundInstruction = false;
 
             var fixedInstructions = new[]
@@ -30,13 +31,22 @@ namespace PropPainter
                 new CodeInstruction(OpCodes.Stloc_S, 5)
             };
 
+            if(GetColorOriginal == null){
+                Db.e("Could not bind original GetColor. Aborting transpiler.");
+                return codes.AsEnumerable();
+            }
+
+            if(GetColorFix == null){
+                Db.e("Could not bind custom GetColorFix. Aborting transpiler.");
+                return codes.AsEnumerable();
+            }
+
             for (int i = 0; i < codes.Count; i++){
 
                 if (codes[i].opcode == OpCodes.Callvirt)
                 {
                     if (codes[i].operand == GetColorOriginal)
                     {
-                        Debug.Log("Found GetColor instruction.");
                         foundInstruction = true;
 
                         /** Original IL [Harmony]:
@@ -50,8 +60,6 @@ namespace PropPainter
 
                         codes.RemoveRange(FIRST, 4);
 
-                        Debug.Log("Deleted instructions.");
-
                         /** Modified IL [dnSpy]:
                          * IL_00A4: ldarg.0
                          * IL_00A5: ldloc.0
@@ -62,8 +70,6 @@ namespace PropPainter
                         */
 
                         codes.InsertRange(FIRST, fixedInstructions);
-
-                        Debug.Log("Added new instructions.");
                         break;
                     }
                 }

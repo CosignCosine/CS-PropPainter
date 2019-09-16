@@ -71,6 +71,7 @@
     <Compile Include="PropPainterGetColorFix.cs" />
     <Compile Include="PropPainterManager.cs" />
     <Compile Include="PropPainterUtils.cs" />
+    <Compile Include="PropPainterLoading.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="lib\" />
