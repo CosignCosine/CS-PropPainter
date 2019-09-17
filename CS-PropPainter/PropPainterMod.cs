@@ -25,6 +25,42 @@ namespace PropPainter
             harmony.UnpatchAll(harmonyId);
             harmony = null;
         }
+
+        // DEBUG ONLY
+        private ushort a;
+        private byte r;
+        private byte g;
+        private byte b;
+        public void OnSettingsUI(UIHelperBase helper){
+            helper.AddTextfield("ID", "0", (text) =>
+            {
+                a = ushort.Parse(text);
+            });
+
+            helper.AddTextfield("r", "0.0", (text) =>
+            {
+                r = byte.Parse(text);
+            });
+
+            helper.AddTextfield("g", "0.0", (text) =>
+            {
+                g = byte.Parse(text);
+            });
+
+            helper.AddTextfield("b", "0.0", (text) =>
+            {
+                b = byte.Parse(text);
+            });
+
+            helper.AddButton("color", () =>
+            {
+                if(PropPainterManager.instance == null){
+                    Db.l("Prop Painter instance was null.");
+                    return;
+                }
+                PropPainterManager.instance.SetColor(a, new Color32(r, g, b, 255));
+            });
+        }
     }
 
     public static class Db {
