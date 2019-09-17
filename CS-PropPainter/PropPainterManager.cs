@@ -1,5 +1,6 @@
 ﻿using System;
 using ColossalFramework;
+using ColossalFramework.UI;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -26,8 +27,13 @@ namespace PropPainter
             
         }
 
+        public Color? GetColor(ushort prop){
+            if (map.ContainsKey(prop)) return map[prop];
+            else return null;
+        }
+
         // Convert.ChangeType(GameObject.Find("PropPainterManager").GetComponentInChildren(Type.GetType("PropPainter.PropPainterManager, CS-PropPainter")), Type.GetType("PropPainter.PropPainterManager, CS-PropPainter"))
 
-
+        public UIColorField colorField;
     }
 }

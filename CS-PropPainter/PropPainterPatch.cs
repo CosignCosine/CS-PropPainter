@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Reflection.Emit;
 using System.Reflection;
 using System.Linq;
+using ColossalFramework.UI;
 
 
 namespace PropPainter
@@ -77,6 +78,67 @@ namespace PropPainter
 
             if (!foundInstruction) Debug.LogError("Did not find CodeInstruction, GetColor not patched.");
             return codes.AsEnumerable();
+        }
+    }
+
+    [HarmonyPatch]
+    public static class PropPainterInstallationPatch{
+        static MethodBase TargetMethod(){
+            var t = Type.GetType("MoveIt.MoveItTool, MoveIt");
+            Debug.Log(t);
+            var x = t.GetMethod("OnEnable", BindingFlags.Instance | BindingFlags.NonPublic);;
+            Debug.Log(x);
+            return x;
+        }
+
+        public static void Postfix(){
+            //UIToolOptionPanel.instance
+
+            var t = Type.GetType("MoveIt.UIToolOptionPanel, MoveIt");
+            var UIToolOptionPanel = (t.GetField("instance").GetValue(null));
+            Db.l(UIToolOptionPanel == null);
+            if (UIToolOptionPanel == null || PropPainterManager.instance.colorField != null) return;
+
+            //UIComponent UIToolOptionPanel = UIView.GetAView().FindUIComponent("MoveIt_ToolOptionPanel");
+            PropPainterManager.instance.colorField = CreateColorField((UIComponent) UIToolOptionPanel, "PropPainterCF");
+        }
+
+        // The general idea for this mod is more or less stolen from TPB's Painter mod, even down to the name.
+        // However, this bit of code is literally stolen from him. So. Yeah. Thanks for open-sourcing your code.
+        private static UIColorField cfT;
+
+        private static UIColorField CreateColorField(UIComponent parent, string name)
+        {
+            if (cfT == null)
+            {
+                UIComponent template = UITemplateManager.Get("LineTemplate");
+                if (template == null) return null;
+
+                cfT = template.Find<UIColorField>("LineColor");
+                if (cfT == null) return null;
+            }
+            UIColorField cF = UnityEngine.Object.Instantiate(cfT.gameObject).GetComponent<UIColorField>();
+            parent.AttachUIComponent(cF.gameObject);
+            cF.name = name;
+            cF.AlignTo(parent, UIAlignAnchor.TopRight);
+            cF.relativePosition += new Vector3(-30f, 0f, 0f);
+            cF.size = new Vector2(26f, 26f);
+            cF.pickerPosition = UIColorField.ColorPickerPosition.LeftAbove;
+            cF.eventSelectedColorChanged += ChangeSelectionColors;
+            /*cF.eventColorPickerOpen += (a, b, ref c) => {
+                
+            };*/
+            return cF;
+        }
+
+        private static void ChangeSelectionColors(UIComponent picker, Color color)
+        {
+            Debug.Log("Color changed to (" + color.ToString() + ")");
+        }
+
+        private static void AcquireColor()
+        {
+
         }
     }
 }
