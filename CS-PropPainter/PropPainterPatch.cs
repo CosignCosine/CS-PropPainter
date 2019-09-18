@@ -10,14 +10,14 @@ using ColossalFramework.UI;
 
 namespace PropPainter
 {
-    [HarmonyPatch(typeof(PropInstance), "RenderInstance", new Type[] {typeof(RenderManager.CameraInfo), typeof(ushort), typeof(int)})]
+    [HarmonyPatch(typeof(PropInstance), "RenderInstance", new Type[] { typeof(RenderManager.CameraInfo), typeof(ushort), typeof(int) })]
     public static class PropPainterPatch
     {
         public static IEnumerable<CodeInstruction> Transpiler(MethodBase original, IEnumerable<CodeInstruction> instructions)
         {
             List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
 
-            var GetColorOriginal = typeof(PropInfo).GetMethod("GetColor", new Type[] {typeof(ColossalFramework.Math.Randomizer).MakeByRefType()});
+            var GetColorOriginal = typeof(PropInfo).GetMethod("GetColor", new Type[] { typeof(ColossalFramework.Math.Randomizer).MakeByRefType() });
             var GetColorFix = typeof(PropPainterGetColorFix).GetMethod("GetColor");
 
             var foundInstruction = false;
@@ -32,17 +32,20 @@ namespace PropPainter
                 new CodeInstruction(OpCodes.Stloc_S, 5)
             };
 
-            if(GetColorOriginal == null){
+            if (GetColorOriginal == null)
+            {
                 Db.e("Could not bind original GetColor. Aborting transpiler.");
                 return codes.AsEnumerable();
             }
 
-            if(GetColorFix == null){
+            if (GetColorFix == null)
+            {
                 Db.e("Could not bind custom GetColorFix. Aborting transpiler.");
                 return codes.AsEnumerable();
             }
 
-            for (int i = 0; i < codes.Count; i++){
+            for (int i = 0; i < codes.Count; i++)
+            {
 
                 if (codes[i].opcode == OpCodes.Callvirt)
                 {
@@ -82,30 +85,31 @@ namespace PropPainter
     }
 
     [HarmonyPatch]
-    public static class PropPainterInstallationPatch{
-        static MethodBase TargetMethod(){
-            var t = Type.GetType("MoveIt.MoveItTool, MoveIt");
-            Debug.Log(t);
-            var x = t.GetMethod("OnEnable", BindingFlags.Instance | BindingFlags.NonPublic);;
-            Debug.Log(x);
+    public static class PropPainterInstallationPatch
+    {
+        static MethodBase TargetMethod()
+        {
+            var t = Type.GetType("MoveIt.UIToolOptionPanel, MoveIt");
+            var x = t.GetMethod("Start", BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
             return x;
         }
 
-        public static void Postfix(){
+        public static void Postfix()
+        {
             //UIToolOptionPanel.instance
 
             var t = Type.GetType("MoveIt.UIToolOptionPanel, MoveIt");
             var UIToolOptionPanel = (t.GetField("instance").GetValue(null));
-            Db.l(UIToolOptionPanel == null);
             if (UIToolOptionPanel == null || PropPainterManager.instance.colorField != null) return;
 
             //UIComponent UIToolOptionPanel = UIView.GetAView().FindUIComponent("MoveIt_ToolOptionPanel");
-            PropPainterManager.instance.colorField = CreateColorField((UIComponent) UIToolOptionPanel, "PropPainterCF");
+            PropPainterManager.instance.colorField = CreateColorField((UIComponent)UIToolOptionPanel, "PropPainterCF");
         }
 
         // The general idea for this mod is more or less stolen from TPB's Painter mod, even down to the name.
         // However, this bit of code is literally stolen from him. So. Yeah. Thanks for open-sourcing your code.
         private static UIColorField cfT;
+        private static UIColorField cF;
 
         private static UIColorField CreateColorField(UIComponent parent, string name)
         {
@@ -117,14 +121,17 @@ namespace PropPainter
                 cfT = template.Find<UIColorField>("LineColor");
                 if (cfT == null) return null;
             }
-            UIColorField cF = UnityEngine.Object.Instantiate(cfT.gameObject).GetComponent<UIColorField>();
+            var rf = UnityEngine.Object.Instantiate(cfT.gameObject);
+            cF = rf.GetComponent<UIColorField>();
             parent.AttachUIComponent(cF.gameObject);
+
             cF.name = name;
-            cF.AlignTo(parent, UIAlignAnchor.TopRight);
-            cF.relativePosition += new Vector3(-30f, 0f, 0f);
-            cF.size = new Vector2(26f, 26f);
+            cF.relativePosition = new Vector3(380f, -1f, 0f);
+            cF.size = new Vector2(38f, 40f);
             cF.pickerPosition = UIColorField.ColorPickerPosition.LeftAbove;
             cF.eventSelectedColorChanged += ChangeSelectionColors;
+
+            PropPainterManager.instance.colorField = cF;
             /*cF.eventColorPickerOpen += (a, b, ref c) => {
                 
             };*/
@@ -134,11 +141,55 @@ namespace PropPainter
         private static void ChangeSelectionColors(UIComponent picker, Color color)
         {
             Debug.Log("Color changed to (" + color.ToString() + ")");
+            List<ushort> props = PropPainterManager.instance.ExtractPropsFromMoveItSelection();
+            for (int i = 0; i < props.Count; i++){
+                PropPainterManager.instance.SetColor(props[i], color);
+            }
+        }
+    }
+
+    [HarmonyPatch]
+    public static class PropPainterMoveItSelectionBinderPatch{
+        static MethodBase TargetMethod()
+        {
+            var t = Type.GetType("MoveIt.SelectAction, MoveIt");
+            Debug.Log(t);
+            MethodBase x = t.GetConstructor(new Type[] { typeof(bool) });
+            Debug.Log(x);
+            return x;
         }
 
-        private static void AcquireColor()
+        private static void Postfix()
         {
+            List<ushort> t = PropPainterManager.instance.ExtractPropsFromMoveItSelection();
+            for (int i = 0; i < t.Count; i++){
+                Db.w((i + 1) + ": " + t[i]);
+            }
+            Color? r = PropPainterManager.instance.ParseAggregateColor(t);
+            Color trueColor = new Color32(255, 255, 255, 255);
+            if (r != null) trueColor = (Color) r;
 
+            Debug.Log(r);
+            Debug.Log(trueColor);
+
+            PropPainterManager.instance.colorField.selectedColor = trueColor;
+        }
+    }
+
+    [HarmonyPatch(typeof(UIColorField), "CalculatePopupPosition")]
+    public static class PropPainterColorFieldPatch{
+        private static bool Prefix(UIColorField __instance, ref Vector3 __result){
+            Debug.Log(__instance.name);
+            if(__instance.name == "PropPainterCF"){
+                __result = PropPainterManager.instance.colorFieldPosition;
+                return false;
+            }
+            return true;
+        }
+
+
+        private static void Postfix(Vector3 __result){
+            Debug.Log(__result);
         }
     }
 }
