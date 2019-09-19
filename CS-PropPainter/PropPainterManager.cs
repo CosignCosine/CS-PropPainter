@@ -71,6 +71,7 @@ namespace PropPainter
 
         public UIColorField colorField;
         public UIColorPicker colorPicker;
+        public UIButton propPainterButton;
 
         public Vector3 colorFieldPosition = new Vector3(1.02f, -0.33f, 0f);
     }

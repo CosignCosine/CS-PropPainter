@@ -92,7 +92,7 @@ namespace PropPainter
         {
             if (UIToolOptionPanel.instance == null || PropPainterManager.instance.colorField != null) return;
 
-            CreateColorField((UIComponent)UIToolOptionPanel.instance, "PropPainterCF");
+            CreateUI((UIComponent)UIToolOptionPanel.instance, "PropPainterCF");
         }
 
         // The general idea for this mod is more or less stolen from TPB's Painter mod, even down to the name.
@@ -100,7 +100,7 @@ namespace PropPainter
         public static bool doNotUpdateColors = false;
 
         // Updated code thanks to TPB- @TODO implement! 
-        private static void CreateColorField(UIComponent parent, string name)
+        private static void CreateUI(UIComponent parent, string name)
         {
             UIColorField field = UITemplateManager.Get<UIPanel>("LineTemplate").Find<UIColorField>("LineColor");
             field = UnityEngine.Object.Instantiate<UIColorField>(field);
@@ -113,6 +113,26 @@ namespace PropPainter
             pickerPanel.backgroundSprite = "";
             picker.component.size = new Vector2(254f, 217f); // ?/
             parent.AttachUIComponent(picker.gameObject);
+
+            UIButton propPickerButton = parent.AddUIComponent<UIButton>();
+            propPickerButton.name = name + "_button";
+            propPickerButton.normalBgSprite = "OptionBase";
+            propPickerButton.focusedBgSprite = "OptionBaseFocused";
+            propPickerButton.hoveredBgSprite = "OptionBaseHovered";
+            propPickerButton.pressedBgSprite = "OptionBasePressed";
+            propPickerButton.disabledBgSprite = "OptionBaseDisabled";
+            propPickerButton.normalFgSprite = "EyeDropper";
+            propPickerButton.size = new Vector2(36, 36);
+            UIButton AlignTools = typeof(UIToolOptionPanel).GetField("m_alignTools").GetValue(UIToolOptionPanel.instance) as UIButton;
+            propPickerButton.absolutePosition = AlignTools.absolutePosition + new Vector3(AlignTools.width, 0);
+
+            var GetIconsAtlas = typeof(UIToolOptionPanel).GetMethod("GetIconsAtlas");
+            propPickerButton.atlas = GetIconsAtlas.Invoke(null, new object[] { }) as UITextureAtlas;
+
+            propPickerButton.eventClick += (component, eventParam) => {
+                field.isVisible = !field.isVisible;
+            };
+
 
             PropPainterManager.instance.colorField = field;
             PropPainterManager.instance.colorPicker = picker;
