@@ -14,10 +14,13 @@ namespace PropPainter
 {
     public class PropPainterManager : MonoBehaviour
     {
+        // Static instance initialized at runtime
         public static PropPainterManager instance;
 
+        // Public map because that works too
         public Dictionary<ushort, Color> map = new Dictionary<ushort, Color>();
 
+        // Getting and setting colors
         public void SetColor(ushort prop, Color color){
             if (map.ContainsKey(prop)) map[prop] = color;
             else map.Add(prop, color);
@@ -28,6 +31,7 @@ namespace PropPainter
             else return null;
         }
 
+        // Acquiring and parsing move it selections
         public List<ushort> ExtractPropsFromMoveItSelection(){
             /*
             var Action = Type.GetType("MoveIt.Action, MoveIt");
@@ -69,11 +73,10 @@ namespace PropPainter
             return theColor;
         }
 
+        // UI
         public UIColorField colorField;
         public UIColorPicker colorPicker;
         public UIButton propPainterButton;
-
-        public Vector3 colorFieldPosition = new Vector3(1.02f, -0.33f, 0f);
     }
 
     public class PropPainterDataContainer : IDataContainer {
@@ -132,6 +135,7 @@ namespace PropPainter
 
         public void AfterDeserialize(DataSerializer s)
         {
+            // @TODO implement afterdeserialize properly
             /*
             if (!PropManager.exists) return;
 
@@ -153,6 +157,7 @@ namespace PropPainter
         }
     }
 
+    // Stolen from MakeHistorical
     public class PropPainterSerializer : SerializableDataExtensionBase {
         private PropPainterDataContainer _data;
 
@@ -167,14 +172,13 @@ namespace PropPainter
                 {
                     _data = DataSerializer.Deserialize<PropPainterDataContainer>(stream, DataSerializer.Mode.Memory);
                 }
-
-                Debug.LogFormat("Data loaded (Size in bytes: {0})", bytes.Length);
+                Db.l("Data loaded (Size in bytes: { " + bytes.Length + "})");
             }
             else
             {
                 _data = new PropPainterDataContainer();
 
-                Debug.Log("Data created");
+                Db.w("Data created");
             }
         }
 
@@ -192,7 +196,7 @@ namespace PropPainter
             // Save bytes in savegame
             serializableDataManager.SaveData(PropPainterDataContainer.DataId, bytes);
 
-            Debug.LogFormat("Data saved (Size in bytes: {0})", bytes.Length);
+            Db.l("Data saved (Size in bytes: { " + bytes.Length + "})");
         }
     }
 }

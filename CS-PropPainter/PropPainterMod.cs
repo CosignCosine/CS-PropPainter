@@ -7,7 +7,7 @@ namespace PropPainter
 {
     public class PropPainterMod : IUserMod
     {
-        private readonly string harmonyId = "elektrix.proppainter";
+        public static readonly string harmonyId = "elektrix.proppainter";
         private HarmonyInstance harmony;
 
         public string Name => "Prop Painter";
@@ -37,18 +37,20 @@ namespace PropPainter
     public static class Db {
         public static bool ON = false;
 
+
+
         public static void l(object m){
-            if(ON) Debug.Log(m);
+            if(ON) Debug.Log("[" + PropPainterMod.harmonyId + "]" + m);
         }
 
         public static void w(object m)
         {
-            if (ON) Debug.LogWarning(m);
+            if (ON) Debug.LogWarning("[" + PropPainterMod.harmonyId + "]" + m);
         }
 
         public static void e(object m)
         {
-            if (ON) Debug.LogError(m);
+            if (ON) Debug.LogError("[" + PropPainterMod.harmonyId + "]" + m);
         }
     }
 }

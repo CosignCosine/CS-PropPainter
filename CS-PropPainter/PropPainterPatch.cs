@@ -113,6 +113,7 @@ namespace PropPainter
             pickerPanel.backgroundSprite = "";
             picker.component.size = new Vector2(254f, 217f); // ?/
             parent.AttachUIComponent(picker.gameObject);
+            field.isVisible = false;
 
             UIButton propPickerButton = parent.AddUIComponent<UIButton>();
             propPickerButton.name = name + "_button";
@@ -123,11 +124,14 @@ namespace PropPainter
             propPickerButton.disabledBgSprite = "OptionBaseDisabled";
             propPickerButton.normalFgSprite = "EyeDropper";
             propPickerButton.size = new Vector2(36, 36);
-            UIButton AlignTools = typeof(UIToolOptionPanel).GetField("m_alignTools").GetValue(UIToolOptionPanel.instance) as UIButton;
+            FieldInfo f = typeof(UIToolOptionPanel).GetField("m_alignTools", BindingFlags.Instance | BindingFlags.NonPublic);
+            Debug.Log(f);
+            UIButton AlignTools = f.GetValue(UIToolOptionPanel.instance) as UIButton;
+            Debug.Log(AlignTools);
             propPickerButton.absolutePosition = AlignTools.absolutePosition + new Vector3(AlignTools.width, 0);
 
-            var GetIconsAtlas = typeof(UIToolOptionPanel).GetMethod("GetIconsAtlas");
-            propPickerButton.atlas = GetIconsAtlas.Invoke(null, new object[] { }) as UITextureAtlas;
+            var GetIconsAtlas = typeof(UIToolOptionPanel).GetMethod("GetIconsAtlas", BindingFlags.Instance | BindingFlags.NonPublic);
+            propPickerButton.atlas = GetIconsAtlas.Invoke(UIToolOptionPanel.instance, new object[] { }) as UITextureAtlas;
 
             propPickerButton.eventClick += (component, eventParam) => {
                 field.isVisible = !field.isVisible;
@@ -136,6 +140,7 @@ namespace PropPainter
 
             PropPainterManager.instance.colorField = field;
             PropPainterManager.instance.colorPicker = picker;
+            PropPainterManager.instance.propPainterButton = propPickerButton;
         }
 
         private static void ChangeSelectionColors(Color color)
@@ -167,22 +172,7 @@ namespace PropPainter
 
             PropPainterInstallationPatch.doNotUpdateColors = true;
             PropPainterManager.instance.colorField.selectedColor = trueColor;
+            PropPainterManager.instance.propPainterButton.color = trueColor;
         }
     }
-    /*
-    [HarmonyPatch(typeof(UIColorField), "CalculatePopupPosition")]
-    public static class PropPainterColorFieldPatch{
-        private static bool Prefix(UIColorField __instance, ref Vector3 __result){
-            if(__instance.name == "PropPainterCF"){
-                __result = PropPainterManager.instance.colorFieldPosition;
-                return false;
-            }
-            return true;
-        }
-
-
-        private static void Postfix(Vector3 __result){
-            Db.l("Color field position: " + __result);
-        }
-    }*/
 }
