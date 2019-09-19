@@ -15,7 +15,7 @@ namespace PropPainter
 
         public void OnEnabled()
         {
-            HarmonyInstance.DEBUG = true;
+            //HarmonyInstance.DEBUG = false;
             harmony = HarmonyInstance.Create(harmonyId);
             harmony.PatchAll(Assembly.GetExecutingAssembly());
         }
@@ -26,45 +26,16 @@ namespace PropPainter
             harmony = null;
         }
 
-        // DEBUG ONLY
-        private ushort a;
-        private byte r;
-        private byte g;
-        private byte b;
         public void OnSettingsUI(UIHelperBase helper){
-            helper.AddTextfield("ID", "0", (text) =>
+            helper.AddCheckbox("Debug", false, (check) =>
             {
-                a = ushort.Parse(text);
-            });
-
-            helper.AddTextfield("r", "0.0", (text) =>
-            {
-                r = byte.Parse(text);
-            });
-
-            helper.AddTextfield("g", "0.0", (text) =>
-            {
-                g = byte.Parse(text);
-            });
-
-            helper.AddTextfield("b", "0.0", (text) =>
-            {
-                b = byte.Parse(text);
-            });
-
-            helper.AddButton("color", () =>
-            {
-                if(PropPainterManager.instance == null){
-                    Db.l("Prop Painter instance was null.");
-                    return;
-                }
-                PropPainterManager.instance.SetColor(a, new Color32(r, g, b, 255));
+                Db.ON = check;
             });
         }
     }
 
     public static class Db {
-        public static bool ON = true;
+        public static bool ON = false;
 
         public static void l(object m){
             if(ON) Debug.Log(m);

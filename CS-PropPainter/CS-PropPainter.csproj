@@ -63,6 +63,9 @@
     <Reference Include="0Harmony">
       <HintPath>lib\0Harmony.dll</HintPath>
     </Reference>
+    <Reference Include="MoveIt">
+      <HintPath>..\..\..\Library\Application Support\Colossal Order\Cities_Skylines\Addons\Mods\MoveIt\MoveIt.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="PropPainterMod.cs" />

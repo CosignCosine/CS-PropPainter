@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using ICities;
 using ColossalFramework.UI;
 using ColossalFramework.IO;
@@ -7,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Reflection;
 using UnityEngine;
+using MoveIt;
 
 namespace PropPainter
 {
@@ -27,15 +29,21 @@ namespace PropPainter
         }
 
         public List<ushort> ExtractPropsFromMoveItSelection(){
+            /*
             var Action = Type.GetType("MoveIt.Action, MoveIt");
             var xs = Action.GetField("selection", BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Static).GetValue(null);
-            IEnumerable MoveItSelection = (IEnumerable) xs;
+            IEnumerable MoveItSelection = (IEnumerable) xs;*/
+            HashSet<Instance> MoveItSelection = MoveIt.Action.selection;
 
             List<ushort> formattedProps = new List<ushort>();
 
-            foreach(object objectInstance in MoveItSelection){
+            //foreach(object objectInstance in MoveItSelection){
+            foreach(Instance objectInstance in MoveItSelection){
+                /*
                 PropertyInfo id = objectInstance.GetType().GetProperty("id");
                 InstanceID unreflected = (InstanceID)(id.GetValue(objectInstance, null));
+                */
+                InstanceID unreflected = objectInstance.id;
                 if (unreflected.Type == InstanceType.Prop)
                 {
                     formattedProps.Add(unreflected.Prop);
@@ -62,6 +70,7 @@ namespace PropPainter
         }
 
         public UIColorField colorField;
+        public UIColorPicker colorPicker;
 
         public Vector3 colorFieldPosition = new Vector3(1.02f, -0.33f, 0f);
     }
@@ -69,13 +78,17 @@ namespace PropPainter
     public class PropPainterDataContainer : IDataContainer {
         public static string DataId = "PropPainter";
         public static uint DataVersion = 1;
+
         public void Serialize(DataSerializer s)
         {
             // convert ushort list to int array
             int[] ids = new int[PropManager.MAX_PROP_COUNT];
+            for (int i = 0; i < ids.Length; i++) {
+                ids[i] = 16777216;
+            }
             foreach (KeyValuePair<ushort, Color> item in PropPainterManager.instance.map)
             {
-                Color c = item.Value;
+                Color32 c = item.Value;
                 int hex = ((byte)c.r) << 16 | ((byte)c.b) << 8 | ((byte)c.g);
                 Debug.Log(hex);
                 ids[item.Key] = hex;
@@ -89,12 +102,29 @@ namespace PropPainter
         {
             int[] ids = s.ReadInt32Array();
 
+            PropPainterManager.instance.map = new Dictionary<ushort, Color>();
+
+            // Temporary hack. I need to figure out why this for loop repeats forever, I cannot figure out why.
+            List<int> repeatedIDs = new List<int>();
+
             for (ushort i = 0; i < ids.Length; i++){
+                Debug.Log(i);
+
                 int h = ids[i];
-                byte r = (byte)((h >> 16) & 0xFF);
-                byte g = (byte)((h >> 8) & 0xFF);
-                byte b = (byte)((h) & 0xFF);
-                PropPainterManager.instance.SetColor(i, new Color32(r, g, b, 255));
+                if (repeatedIDs.Contains(i))
+                {
+                    break;
+                }
+
+                if (h != 16777216 && !repeatedIDs.Contains(i)){
+
+                    repeatedIDs.Add(i);
+
+                    byte r = (byte)((h >> 16) & 0xFF);
+                    byte g = (byte)((h >> 8) & 0xFF);
+                    byte b = (byte)((h) & 0xFF);
+                    PropPainterManager.instance.SetColor(i, new Color32(r, g, b, 255));
+                }
             }
         }
 

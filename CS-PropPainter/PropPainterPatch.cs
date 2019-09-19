@@ -6,6 +6,7 @@ using System.Reflection.Emit;
 using System.Reflection;
 using System.Linq;
 using ColossalFramework.UI;
+using MoveIt;
 
 
 namespace PropPainter
@@ -79,68 +80,51 @@ namespace PropPainter
                 }
             }
 
-            if (!foundInstruction) Debug.LogError("Did not find CodeInstruction, GetColor not patched.");
+            if (!foundInstruction) Db.e("Did not find CodeInstruction, GetColor not patched.");
             return codes.AsEnumerable();
         }
     }
 
-    [HarmonyPatch]
+    [HarmonyPatch(typeof(UIToolOptionPanel), "Start")]
     public static class PropPainterInstallationPatch
     {
-        static MethodBase TargetMethod()
-        {
-            var t = Type.GetType("MoveIt.UIToolOptionPanel, MoveIt");
-            var x = t.GetMethod("Start", BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
-            return x;
-        }
-
         public static void Postfix()
         {
-            //UIToolOptionPanel.instance
+            if (UIToolOptionPanel.instance == null || PropPainterManager.instance.colorField != null) return;
 
-            var t = Type.GetType("MoveIt.UIToolOptionPanel, MoveIt");
-            var UIToolOptionPanel = (t.GetField("instance").GetValue(null));
-            if (UIToolOptionPanel == null || PropPainterManager.instance.colorField != null) return;
-
-            //UIComponent UIToolOptionPanel = UIView.GetAView().FindUIComponent("MoveIt_ToolOptionPanel");
-            PropPainterManager.instance.colorField = CreateColorField((UIComponent)UIToolOptionPanel, "PropPainterCF");
+            CreateColorField((UIComponent)UIToolOptionPanel.instance, "PropPainterCF");
         }
 
         // The general idea for this mod is more or less stolen from TPB's Painter mod, even down to the name.
         // However, this bit of code is literally stolen from him. So. Yeah. Thanks for open-sourcing your code.
-        private static UIColorField cfT;
-        private static UIColorField cF;
+        public static bool doNotUpdateColors = false;
 
-        private static UIColorField CreateColorField(UIComponent parent, string name)
+        // Updated code thanks to TPB- @TODO implement! 
+        private static void CreateColorField(UIComponent parent, string name)
         {
-            if (cfT == null)
-            {
-                UIComponent template = UITemplateManager.Get("LineTemplate");
-                if (template == null) return null;
+            UIColorField field = UITemplateManager.Get<UIPanel>("LineTemplate").Find<UIColorField>("LineColor");
+            field = UnityEngine.Object.Instantiate<UIColorField>(field);
+            UIColorPicker picker = UnityEngine.Object.Instantiate<UIColorPicker>(field.colorPicker);
+            picker.eventColorUpdated += ChangeSelectionColors;
+            picker.color = Color.white;
+            picker.component.color = Color.white;
+            picker.name = name;
+            UIPanel pickerPanel = picker.component as UIPanel;
+            pickerPanel.backgroundSprite = "";
+            picker.component.size = new Vector2(254f, 217f); // ?/
+            parent.AttachUIComponent(picker.gameObject);
 
-                cfT = template.Find<UIColorField>("LineColor");
-                if (cfT == null) return null;
-            }
-            var rf = UnityEngine.Object.Instantiate(cfT.gameObject);
-            cF = rf.GetComponent<UIColorField>();
-            parent.AttachUIComponent(cF.gameObject);
-
-            cF.name = name;
-            cF.relativePosition = new Vector3(380f, -1f, 0f);
-            cF.size = new Vector2(38f, 40f);
-            cF.pickerPosition = UIColorField.ColorPickerPosition.LeftAbove;
-            cF.eventSelectedColorChanged += ChangeSelectionColors;
-
-            PropPainterManager.instance.colorField = cF;
-            /*cF.eventColorPickerOpen += (a, b, ref c) => {
-                
-            };*/
-            return cF;
+            PropPainterManager.instance.colorField = field;
+            PropPainterManager.instance.colorPicker = picker;
         }
 
-        private static void ChangeSelectionColors(UIComponent picker, Color color)
+        private static void ChangeSelectionColors(Color color)
         {
-            Debug.Log("Color changed to (" + color.ToString() + ")");
+            if (doNotUpdateColors){
+                doNotUpdateColors = false;
+                return;
+            }
+            Db.l("Color of selected objects changed to (" + color.ToString() + ")");
             List<ushort> props = PropPainterManager.instance.ExtractPropsFromMoveItSelection();
             for (int i = 0; i < props.Count; i++){
                 PropPainterManager.instance.SetColor(props[i], color);
@@ -148,16 +132,8 @@ namespace PropPainter
         }
     }
 
-    [HarmonyPatch]
+    [HarmonyPatch(typeof(SelectAction), "Add")]
     public static class PropPainterMoveItSelectionBinderPatch{
-        static MethodBase TargetMethod()
-        {
-            var t = Type.GetType("MoveIt.SelectAction, MoveIt");
-            Debug.Log(t);
-            MethodBase x = t.GetConstructor(new Type[] { typeof(bool) });
-            Debug.Log(x);
-            return x;
-        }
 
         private static void Postfix()
         {
@@ -169,17 +145,14 @@ namespace PropPainter
             Color trueColor = new Color32(255, 255, 255, 255);
             if (r != null) trueColor = (Color) r;
 
-            Debug.Log(r);
-            Debug.Log(trueColor);
-
+            PropPainterInstallationPatch.doNotUpdateColors = true;
             PropPainterManager.instance.colorField.selectedColor = trueColor;
         }
     }
-
+    /*
     [HarmonyPatch(typeof(UIColorField), "CalculatePopupPosition")]
     public static class PropPainterColorFieldPatch{
         private static bool Prefix(UIColorField __instance, ref Vector3 __result){
-            Debug.Log(__instance.name);
             if(__instance.name == "PropPainterCF"){
                 __result = PropPainterManager.instance.colorFieldPosition;
                 return false;
@@ -189,7 +162,7 @@ namespace PropPainter
 
 
         private static void Postfix(Vector3 __result){
-            Debug.Log(__result);
+            Db.l("Color field position: " + __result);
         }
-    }
+    }*/
 }
