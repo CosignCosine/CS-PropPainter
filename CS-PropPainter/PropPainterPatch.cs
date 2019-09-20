@@ -104,6 +104,8 @@ namespace PropPainter
         {
             UIColorField field = UITemplateManager.Get<UIPanel>("LineTemplate").Find<UIColorField>("LineColor");
             field = UnityEngine.Object.Instantiate<UIColorField>(field);
+            field.isVisible = false;
+            field.name = "PropPickerColorField";
             UIColorPicker picker = UnityEngine.Object.Instantiate<UIColorPicker>(field.colorPicker);
             picker.eventColorUpdated += ChangeSelectionColors;
             picker.color = Color.white;
@@ -111,30 +113,50 @@ namespace PropPainter
             picker.name = name;
             UIPanel pickerPanel = picker.component as UIPanel;
             pickerPanel.backgroundSprite = "";
+            pickerPanel.isVisible = false;
             picker.component.size = new Vector2(254f, 217f); // ?/
             parent.AttachUIComponent(picker.gameObject);
-            field.isVisible = false;
 
-            UIButton propPickerButton = parent.AddUIComponent<UIButton>();
-            propPickerButton.name = name + "_button";
-            propPickerButton.normalBgSprite = "OptionBase";
-            propPickerButton.focusedBgSprite = "OptionBaseFocused";
-            propPickerButton.hoveredBgSprite = "OptionBaseHovered";
-            propPickerButton.pressedBgSprite = "OptionBasePressed";
-            propPickerButton.disabledBgSprite = "OptionBaseDisabled";
-            propPickerButton.normalFgSprite = "EyeDropper";
+            UIMultiStateButton propPickerButton = parent.AddUIComponent<UIMultiStateButton>();
+            propPickerButton.name = name + "button";
+
+            propPickerButton.backgroundSprites.AddState();
+
+            propPickerButton.backgroundSprites[0].normal = "OptionBase";
+            propPickerButton.backgroundSprites[0].focused = "OptionBase";
+            propPickerButton.backgroundSprites[0].hovered = "OptionBaseHovered";
+            propPickerButton.backgroundSprites[0].pressed = "OptionBasePressed";
+            propPickerButton.backgroundSprites[0].disabled = "OptionBaseDisabled";
+
+            propPickerButton.foregroundSprites[0].normal = "EyeDropper";
+
+            propPickerButton.backgroundSprites.AddState();
+
+            propPickerButton.backgroundSprites[1].normal = "OptionBaseFocused";
+            propPickerButton.backgroundSprites[1].focused = "OptionBaseFocused";
+            propPickerButton.backgroundSprites[1].hovered = "OptionBaseHovered";
+            propPickerButton.backgroundSprites[1].pressed = "OptionBasePressed";
+            propPickerButton.backgroundSprites[1].disabled = "OptionBaseDisabled";
+
+            propPickerButton.foregroundSprites[1].normal = "EyeDropper";
+
             propPickerButton.size = new Vector2(36, 36);
+            propPickerButton.activeStateIndex = 0;
+
             FieldInfo f = typeof(UIToolOptionPanel).GetField("m_alignTools", BindingFlags.Instance | BindingFlags.NonPublic);
-            Debug.Log(f);
             UIButton AlignTools = f.GetValue(UIToolOptionPanel.instance) as UIButton;
-            Debug.Log(AlignTools);
             propPickerButton.absolutePosition = AlignTools.absolutePosition + new Vector3(AlignTools.width, 0);
 
             var GetIconsAtlas = typeof(UIToolOptionPanel).GetMethod("GetIconsAtlas", BindingFlags.Instance | BindingFlags.NonPublic);
             propPickerButton.atlas = GetIconsAtlas.Invoke(UIToolOptionPanel.instance, new object[] { }) as UITextureAtlas;
 
             propPickerButton.eventClick += (component, eventParam) => {
-                field.isVisible = !field.isVisible;
+                if(propPickerButton.activeStateIndex == 0){
+                    propPickerButton.activeStateIndex = 1;
+                }else{
+                    propPickerButton.activeStateIndex = 0;
+                }
+                pickerPanel.isVisible = propPickerButton.activeStateIndex == 1;
             };
 
 
