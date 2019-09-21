@@ -125,10 +125,10 @@ namespace PropPainter
             Db.l("Prop Picker color picker instantiated");
 
 
-            FieldInfo f = typeof(UIToolOptionPanel).GetField("m_alignTools", BindingFlags.Instance | BindingFlags.NonPublic);
+            FieldInfo f = typeof(UIToolOptionPanel).GetField("m_moreTools", BindingFlags.Instance | BindingFlags.NonPublic);
             UIButton AlignTools = f.GetValue(UIToolOptionPanel.instance) as UIButton;
 
-            UIPanel AlignToolsPanel = UIToolOptionPanel.instance.m_alignToolsPanel;
+            UIPanel AlignToolsPanel = UIToolOptionPanel.instance.m_moreToolsPanel;
 
             // @TODO - Make this modular, please! I need to put more buttons here later and I need to make a single singleton manager for all of my mods.
             UIPanel extraToolBackground = AlignToolsPanel.AddUIComponent<UIPanel>();
