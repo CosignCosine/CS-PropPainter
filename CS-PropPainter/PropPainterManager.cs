@@ -94,7 +94,7 @@ namespace PropPainter
             foreach (KeyValuePair<ushort, Color> item in PropPainterManager.instance.map)
             {
                 Color32 c = item.Value;
-                int hex = ((byte)c.r) << 16 | ((byte)c.b) << 8 | ((byte)c.g);
+                int hex = ((byte)c.r) << 16 | ((byte)c.g) << 8 | ((byte)c.b);
                 Debug.Log(hex);
                 ids[item.Key] = hex;
             }
