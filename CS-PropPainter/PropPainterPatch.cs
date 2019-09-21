@@ -106,21 +106,61 @@ namespace PropPainter
             field = UnityEngine.Object.Instantiate<UIColorField>(field);
             field.isVisible = false;
             field.name = "PropPickerColorField";
+
             UIColorPicker picker = UnityEngine.Object.Instantiate<UIColorPicker>(field.colorPicker);
             picker.eventColorUpdated += ChangeSelectionColors;
             picker.color = Color.white;
             picker.component.color = Color.white;
             picker.name = name;
+
             UIPanel pickerPanel = picker.component as UIPanel;
-            pickerPanel.backgroundSprite = "";
+            pickerPanel.backgroundSprite = "InfoPanelBack";
             pickerPanel.isVisible = false;
-            picker.component.size = new Vector2(254f, 217f); // ?/
+            picker.component.size = new Vector2(254f, 226f); // ?/
+
             parent.AttachUIComponent(picker.gameObject);
 
-            UIMultiStateButton propPickerButton = parent.AddUIComponent<UIMultiStateButton>();
-            propPickerButton.name = name + "button";
+            pickerPanel.absolutePosition = UIToolOptionPanel.instance.m_viewOptions.absolutePosition - new Vector3(329, 147);
+
+            Db.l("Prop Picker color picker instantiated");
+
+
+            FieldInfo f = typeof(UIToolOptionPanel).GetField("m_alignTools", BindingFlags.Instance | BindingFlags.NonPublic);
+            UIButton AlignTools = f.GetValue(UIToolOptionPanel.instance) as UIButton;
+
+            UIPanel AlignToolsPanel = UIToolOptionPanel.instance.m_alignToolsPanel;
+
+            // @TODO - Make this modular, please! I need to put more buttons here later and I need to make a single singleton manager for all of my mods.
+            UIPanel extraToolBackground = AlignToolsPanel.AddUIComponent<UIPanel>();
+            extraToolBackground.size = new Vector2(26, 70);
+            extraToolBackground.clipChildren = true;
+            extraToolBackground.relativePosition = new Vector3(5, -37);
+            extraToolBackground.backgroundSprite = "InfoPanelBack";
+            extraToolBackground.name = "ElektrixModsMenu";
+            extraToolBackground.zOrder = 0;
+
+            AlignTools.tooltip = "More Tools";
+
+            UIToolOptionPanel.instance.clipChildren = false;
+            UIComponent[] t = UIToolOptionPanel.instance.GetComponentsInChildren<UIPanel>();
+            for (int i = 0; i < t.Length; i++){
+                t[i].clipChildren = false;
+            }
+
+
+            UIMultiStateButton propPickerButton = AlignToolsPanel.AddUIComponent<UIMultiStateButton>();
+            propPickerButton.name = "PropPickerButton";
+            propPickerButton.tooltip = "Prop Painter";
+            propPickerButton.spritePadding = new RectOffset(2, 2, 2, 2);
+            propPickerButton.playAudioEvents = true;
+
+            propPickerButton.relativePosition = new Vector3(0, -45);
+
+            var GetIconsAtlas = typeof(UIToolOptionPanel).GetMethod("GetIconsAtlas", BindingFlags.Instance | BindingFlags.NonPublic);
+            propPickerButton.atlas = GetIconsAtlas.Invoke(UIToolOptionPanel.instance, new object[] { }) as UITextureAtlas;
 
             propPickerButton.backgroundSprites.AddState();
+            propPickerButton.foregroundSprites.AddState();
 
             propPickerButton.backgroundSprites[0].normal = "OptionBase";
             propPickerButton.backgroundSprites[0].focused = "OptionBase";
@@ -129,8 +169,6 @@ namespace PropPainter
             propPickerButton.backgroundSprites[0].disabled = "OptionBaseDisabled";
 
             propPickerButton.foregroundSprites[0].normal = "EyeDropper";
-
-            propPickerButton.backgroundSprites.AddState();
 
             propPickerButton.backgroundSprites[1].normal = "OptionBaseFocused";
             propPickerButton.backgroundSprites[1].focused = "OptionBaseFocused";
@@ -143,26 +181,20 @@ namespace PropPainter
             propPickerButton.size = new Vector2(36, 36);
             propPickerButton.activeStateIndex = 0;
 
-            FieldInfo f = typeof(UIToolOptionPanel).GetField("m_alignTools", BindingFlags.Instance | BindingFlags.NonPublic);
-            UIButton AlignTools = f.GetValue(UIToolOptionPanel.instance) as UIButton;
-            propPickerButton.absolutePosition = AlignTools.absolutePosition + new Vector3(AlignTools.width, 0);
 
-            var GetIconsAtlas = typeof(UIToolOptionPanel).GetMethod("GetIconsAtlas", BindingFlags.Instance | BindingFlags.NonPublic);
-            propPickerButton.atlas = GetIconsAtlas.Invoke(UIToolOptionPanel.instance, new object[] { }) as UITextureAtlas;
-
-            propPickerButton.eventClick += (component, eventParam) => {
-                if(propPickerButton.activeStateIndex == 0){
-                    propPickerButton.activeStateIndex = 1;
-                }else{
-                    propPickerButton.activeStateIndex = 0;
-                }
+            propPickerButton.eventClicked += (component, eventParam) => {
+                Db.l("Button state " + propPickerButton.activeStateIndex);
                 pickerPanel.isVisible = propPickerButton.activeStateIndex == 1;
+                Db.w("Tried to make color picker visible/invisible");
             };
+
+            Db.l("Prop Picker button instantiated");
 
 
             PropPainterManager.instance.colorField = field;
             PropPainterManager.instance.colorPicker = picker;
             PropPainterManager.instance.propPainterButton = propPickerButton;
+            PropPainterManager.instance.colorPanel = pickerPanel;
         }
 
         private static void ChangeSelectionColors(Color color)

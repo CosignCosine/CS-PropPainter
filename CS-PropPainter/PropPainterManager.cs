@@ -77,6 +77,7 @@ namespace PropPainter
         public UIColorField colorField;
         public UIColorPicker colorPicker;
         public UIMultiStateButton propPainterButton;
+        public UIPanel colorPanel;
     }
 
     public class PropPainterDataContainer : IDataContainer {
