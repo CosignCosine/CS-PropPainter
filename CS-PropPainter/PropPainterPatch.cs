@@ -130,10 +130,10 @@ namespace PropPainter
             Db.l("Prop Picker color picker instantiated");
 
 
-            FieldInfo f = typeof(UIToolOptionPanel).GetField("m_alignTools", BindingFlags.Instance | BindingFlags.NonPublic);
-            UIButton AlignTools = f.GetValue(UIToolOptionPanel.instance) as UIButton;
+            FieldInfo f = typeof(UIToolOptionPanel).GetField("m_moreTools", BindingFlags.Instance | BindingFlags.NonPublic);
+            UIButton MoreTools = f.GetValue(UIToolOptionPanel.instance) as UIButton;
 
-            UIPanel AlignToolsPanel = UIToolOptionPanel.instance.m_alignToolsPanel;
+            UIPanel MoreToolsPanel = UIToolOptionPanel.instance.m_moreToolsPanel;
 
             FieldInfo fa = typeof(UIToolOptionPanel).GetField("m_single", BindingFlags.Instance | BindingFlags.NonPublic);
             UIButton Single = fa.GetValue(UIToolOptionPanel.instance) as UIButton;
@@ -147,7 +147,7 @@ namespace PropPainter
             UIToolOptionPanel.instance.m_filtersPanelList.height = 240f;
 
             // @TODO - Make this modular, please! I need to put more buttons here later and I need to make a single singleton manager for all of my mods.
-            UIPanel extraToolBackground = AlignToolsPanel.AddUIComponent<UIPanel>();
+            UIPanel extraToolBackground = MoreToolsPanel.AddUIComponent<UIPanel>();
             extraToolBackground.size = new Vector2(26, 70);
             extraToolBackground.clipChildren = true;
             extraToolBackground.relativePosition = new Vector3(5, -37);
@@ -155,7 +155,7 @@ namespace PropPainter
             extraToolBackground.name = "ElektrixModsMenu";
             extraToolBackground.zOrder = 0;
 
-            AlignTools.tooltip = "More Tools";
+           MoreTools.tooltip = "More Tools";
 
             UIToolOptionPanel.instance.clipChildren = false;
             UIComponent[] t = UIToolOptionPanel.instance.GetComponentsInChildren<UIPanel>();
@@ -164,7 +164,7 @@ namespace PropPainter
             }
 
 
-            UIMultiStateButton propPickerButton = AlignToolsPanel.AddUIComponent<UIMultiStateButton>();
+            UIMultiStateButton propPickerButton = MoreToolsPanel.AddUIComponent<UIMultiStateButton>();
             propPickerButton.name = "PropPickerButton";
             propPickerButton.tooltip = "Prop Painter";
             propPickerButton.spritePadding = new RectOffset(2, 2, 2, 2);
@@ -249,9 +249,9 @@ namespace PropPainter
 
     [HarmonyPatch(typeof(CloneAction), "Do")]
     public static class PropPainterMoveItSelectionCopy{
-        private static void Postfix(Dictionary<Instance, Instance> ___m_clonedOrigin)
+        private static void Postfix(Dictionary<Instance, Instance> ___m_origToCloneUpdate)
         {
-            foreach (KeyValuePair<Instance, Instance> x in ___m_clonedOrigin){
+            foreach (KeyValuePair<Instance, Instance> x in ___m_origToCloneUpdate){
                 Instance a = x.Key;
                 Instance b = x.Value;
                 if (a.id.Type != InstanceType.Prop) return;

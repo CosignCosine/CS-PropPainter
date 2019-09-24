@@ -64,7 +64,7 @@
       <HintPath>lib\0Harmony.dll</HintPath>
     </Reference>
     <Reference Include="MoveIt">
-      <HintPath>..\..\..\Library\Application Support\Colossal Order\Cities_Skylines\Addons\Mods\MoveIt\MoveIt.dll</HintPath>
+      <HintPath>..\..\..\Library\Application Support\Colossal Order\Cities_Skylines\Addons\Mods\MoveIt2\MoveIt.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
