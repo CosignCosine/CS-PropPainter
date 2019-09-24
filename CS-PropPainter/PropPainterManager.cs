@@ -113,13 +113,15 @@ namespace PropPainter
             List<int> repeatedIDs = new List<int>();
 
             for (ushort i = 0; i < ids.Length; i++){
-                Debug.Log(i);
+                Db.l(i);
 
                 int h = ids[i];
                 if (repeatedIDs.Contains(i))
                 {
                     break;
                 }
+
+                if (i == 7000) repeatedIDs.Add(i);
 
                 if (h != 16777216 && !repeatedIDs.Contains(i)){
 
@@ -137,6 +139,7 @@ namespace PropPainter
         public void AfterDeserialize(DataSerializer s)
         {
             // @TODO implement afterdeserialize properly
+            Db.l("After deserialize.");
             /*
             if (!PropManager.exists) return;
 
@@ -164,11 +167,9 @@ namespace PropPainter
 
         public override void OnLoadData()
         {
-            // Get bytes from savegame
             byte[] bytes = serializableDataManager.LoadData(PropPainterDataContainer.DataId);
             if (bytes != null)
             {
-                // Convert the bytes to MakeHistoricalData object
                 using (var stream = new MemoryStream(bytes))
                 {
                     _data = DataSerializer.Deserialize<PropPainterDataContainer>(stream, DataSerializer.Mode.Memory);

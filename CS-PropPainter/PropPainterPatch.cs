@@ -63,6 +63,9 @@ namespace PropPainter
 
                         int FIRST = i - 2;
 
+                        // Workaround. Changing up this code significantly caused some errors that I do not have time to fix for the moment.
+                        List<Label> originalLabels = codes[FIRST].labels;
+
                         codes.RemoveRange(FIRST, 4);
 
                         /** Modified IL [dnSpy]:
@@ -75,6 +78,8 @@ namespace PropPainter
                         */
 
                         codes.InsertRange(FIRST, fixedInstructions);
+
+                        codes[FIRST].labels = originalLabels;
                         break;
                     }
                 }
@@ -129,6 +134,17 @@ namespace PropPainter
             UIButton AlignTools = f.GetValue(UIToolOptionPanel.instance) as UIButton;
 
             UIPanel AlignToolsPanel = UIToolOptionPanel.instance.m_alignToolsPanel;
+
+            FieldInfo fa = typeof(UIToolOptionPanel).GetField("m_single", BindingFlags.Instance | BindingFlags.NonPublic);
+            UIButton Single = fa.GetValue(UIToolOptionPanel.instance) as UIButton;
+
+            FieldInfo fb = typeof(UIToolOptionPanel).GetField("m_marquee", BindingFlags.Instance | BindingFlags.NonPublic);
+            UIButton Marquee = fb.GetValue(UIToolOptionPanel.instance) as UIButton;
+
+            Single.zOrder = 7;
+            Marquee.zOrder = 7;
+
+            UIToolOptionPanel.instance.m_filtersPanelList.height = 240f;
 
             // @TODO - Make this modular, please! I need to put more buttons here later and I need to make a single singleton manager for all of my mods.
             UIPanel extraToolBackground = AlignToolsPanel.AddUIComponent<UIPanel>();
@@ -185,6 +201,7 @@ namespace PropPainter
             propPickerButton.eventClicked += (component, eventParam) => {
                 Db.l("Button state " + propPickerButton.activeStateIndex);
                 pickerPanel.isVisible = propPickerButton.activeStateIndex == 1;
+                UIToolOptionPanel.instance.m_filtersPanelList.height = 240f;
                 Db.w("Tried to make color picker visible/invisible");
             };
 
@@ -229,4 +246,19 @@ namespace PropPainter
             PropPainterManager.instance.propPainterButton.color = trueColor;
         }
     }
+
+    [HarmonyPatch(typeof(CloneAction), "Do")]
+    public static class PropPainterMoveItSelectionCopy{
+        private static void Postfix(Dictionary<Instance, Instance> ___m_clonedOrigin)
+        {
+            foreach (KeyValuePair<Instance, Instance> x in ___m_clonedOrigin){
+                Instance a = x.Key;
+                Instance b = x.Value;
+                if (a.id.Type != InstanceType.Prop) return;
+                if (PropPainterManager.instance.GetColor(a.id.Prop) == null) return;
+                PropPainterManager.instance.SetColor(b.id.Prop, (Color) PropPainterManager.instance.GetColor(a.id.Prop));
+                Db.l("Colors cloned from " + a + " to " + b);
+            }
+        }
+    }   
 }
