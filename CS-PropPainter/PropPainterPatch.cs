@@ -155,8 +155,6 @@ namespace PropPainter
             extraToolBackground.name = "ElektrixModsMenu";
             extraToolBackground.zOrder = 0;
 
-           MoreTools.tooltip = "More Tools";
-
             UIToolOptionPanel.instance.clipChildren = false;
             UIComponent[] t = UIToolOptionPanel.instance.GetComponentsInChildren<UIPanel>();
             for (int i = 0; i < t.Length; i++){
